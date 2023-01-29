@@ -2,3 +2,4 @@ node_modules
 .pytest_cache
 .env
 .env.test
+/config.env
