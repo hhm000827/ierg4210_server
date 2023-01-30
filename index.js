@@ -49,9 +49,9 @@ pool.getConnection((err, connection) => {
       } else if (!lang.isNil(pid)) {
         // use cid to filter
         const query =
-          "SELECT PRODUCTS.pid,PRODUCTS.cid,PRODUCTS.name,PRODUCTS.price,PRODUCTS.inventory,PRODUCTS.img,PRODUCTS.description, CATEGORIES.name AS cname from PRODUCTS JOIN CATEGORIES ON PRODUCTS.cid = CATEGORIES.cid and pid =?";
+          "SELECT PRODUCTS.pid,PRODUCTS.cid,PRODUCTS.name,PRODUCTS.price,PRODUCTS.inventory,PRODUCTS.img,PRODUCTS.description, CATEGORIES.name AS category from PRODUCTS JOIN CATEGORIES ON PRODUCTS.cid = CATEGORIES.cid and pid =?";
         connection.query(query, [pid], (err, product) => {
-          err ? console.error(err) : res.send(product);
+          err ? console.error(err) : res.send(product[0]);
         });
       }
     });
