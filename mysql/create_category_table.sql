@@ -1,6 +1,6 @@
 CREATE TABLE CATEGORIES (
- cid int PRIMARY KEY,
- name varchar(255) NOT NULL,
+ cid int AUTO_INCREMENT PRIMARY KEY,
+ name varchar(255) NOT NULL
 );
 
 insert into cart.CATEGORIES values (1,"Arknight");

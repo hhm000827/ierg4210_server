@@ -1,5 +1,5 @@
 CREATE TABLE PRODUCTS (
- pid int PRIMARY KEY,
+ pid int AUTO_INCREMENT PRIMARY KEY,
  cid int NOT NULL,
  name varchar(255) NOT NULL,
  price float NOT NULL,
