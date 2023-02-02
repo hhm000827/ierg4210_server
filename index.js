@@ -5,6 +5,7 @@ var bodyParser = require("body-parser");
 var lang = require("lodash/lang");
 require("dotenv").config({ path: __dirname + "/config.env" });
 var string = require("lodash/string");
+var he = require("he");
 
 const app = express();
 app.use(cors());
@@ -16,7 +17,8 @@ app.use("/images", express.static("image"));
 
 const convertEscapeWord = (input) => {
   result = string.escape(input);
-  return string.escapeRegExp(input);
+  result = string.escapeRegExp(input);
+  return he.encode(result);
 };
 
 app.get("/api/getAllProduct", (req, res) => {
