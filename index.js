@@ -59,11 +59,11 @@ app.post("/api/createCategory", (req, res) => {
   // find if name is already existing first
   pool.query(query, [name], (err, result) => {
     err
-      ? res.status(500).send("Cannot create category, please try again later")
+      ? (console.error(err), res.status(500).send("Cannot create category, please try again later"))
       : lang.isNil(result) || lang.isEmpty(result)
       ? ((query = "INSERT INTO CATEGORIES (name) VALUES (?)"),
         pool.query(query, [name], (err, result) => {
-          err ? res.status(500).send("Cannot create category, please try again later") : res.send("success to create new category");
+          err ? (console.error(err), res.status(500).send("Cannot create category, please try again later")) : res.send("success to create new category");
         }))
       : res.status(400).send("This category already exists, please retype the category");
   });
@@ -77,11 +77,11 @@ app.put("/api/updateCategory", (req, res) => {
   // find if name is already existing first
   pool.query(query, [name], (err, result) => {
     err
-      ? res.status(500).send("Cannot update category, please try again later")
+      ? (console.error(err), res.status(500).send("Cannot update category, please try again later"))
       : lang.isNil(result) || lang.isEmpty(result)
       ? ((query = "UPDATE CATEGORIES SET name=? WHERE cid=?"),
         pool.query(query, [name, cid], (err, result) => {
-          err ? res.status(500).send("Cannot update category, please try again later") : res.send("Success to update category");
+          err ? (console.error(err), res.status(500).send("Cannot update category, please try again later")) : res.send("Success to update category");
         }))
       : res.status(400).send("This category already exists, please retype the category");
   });
@@ -93,11 +93,11 @@ app.delete("/api/deleteCategory", (req, res) => {
 
   pool.query(query, [cid], (err, result) => {
     err
-      ? res.status(500).send("Cannot delete category, please try again later")
+      ? (console.error(err), res.status(500).send("Cannot delete category, please try again later"))
       : !lang.isNil(result) && !lang.isEmpty(result)
       ? ((query = "DELETE FROM CATEGORIES WHERE cid=?"),
         pool.query(query, [cid], (err, result) => {
-          err ? res.status(500).send("Cannot delete category, please try again later") : res.send("Success to delete category");
+          err ? (console.error(err), res.status(500).send("Cannot delete category, please try again later")) : res.send("Success to delete category");
         }))
       : res.status(404).send("Category doesn't exist");
   });
