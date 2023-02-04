@@ -6,6 +6,7 @@ var lang = require("lodash/lang");
 require("dotenv").config({ path: __dirname + "/config.env" });
 var string = require("lodash/string");
 var he = require("he");
+const multer = require("multer");
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,25 @@ const convertEscapeWord = (input) => {
   return he.encode(result);
 };
 
+//config of file upload
+let storage = multer.diskStorage({
+  destination: "./image/",
+  filename: function (req, file, callback) {
+    callback(null, convertEscapeWord(req.body["name"]) + "." + file.mimetype.split("/").pop());
+  },
+});
+
+const upload = multer({
+  limits: { fileSize: 5000000 },
+  storage: storage,
+  fileFilter(req, file, cb) {
+    if (file.size <= 0) cb("image is required", false);
+    else if (!file.originalname.match(/\.(jpg|jpeg|gif|png)$/)) cb("Please upload an image", false);
+    else cb(null, true);
+  },
+});
+
+//! Product API
 app.get("/api/getAllProduct", (req, res) => {
   pool.query("SELECT * FROM PRODUCTS", (err, products) => {
     err ? console.error(err) : res.send(products);
@@ -45,6 +65,27 @@ app.get("/api/getFilteredProducts", (req, res) => {
       err ? console.error(err) : res.send(product[0]);
     });
   }
+});
+
+app.post("/api/createProduct", upload.single("file"), (req, res) => {
+  let name = convertEscapeWord(req.body["name"]);
+  let description = convertEscapeWord(req.body["description"]);
+  let cid = req.body["cid"];
+  let price = req.body["price"];
+  let inventory = req.body["inventory"];
+  let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
+
+  // find if name is already existing first
+  pool.query(query, [name], (err, result) => {
+    err
+      ? (console.error(err), res.status(500).send("Cannot create product, please try again later"))
+      : lang.isNil(result) || lang.isEmpty(result)
+      ? ((query = "INSERT INTO PRODUCTS  VALUES (?,?,?,?,?,?,?)"),
+        pool.query(query, [null, cid, name, price, req.file.filename, inventory, description], (err, result) => {
+          err ? (console.error(err), res.status(500).send("Cannot create product, please try again later")) : res.send("success to create new product");
+        }))
+      : res.status(400).send("This product already exists, please retype the product");
+  });
 });
 
 //! Category API
