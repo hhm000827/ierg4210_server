@@ -7,6 +7,7 @@ require("dotenv").config({ path: __dirname + "/config.env" });
 var string = require("lodash/string");
 var he = require("he");
 const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 app.use(cors());
@@ -47,6 +48,12 @@ app.get("/api/getAllProduct", (req, res) => {
   });
 });
 
+app.get("/api/getAllProductNameAndPid", (req, res) => {
+  pool.query("SELECT pid, name FROM PRODUCTS", (err, products) => {
+    err ? console.error(err) : res.send(products);
+  });
+});
+
 app.get("/api/getFilteredProducts", (req, res) => {
   let cid = req.query.cid;
   let pid = req.query.pid;
@@ -73,6 +80,7 @@ app.post("/api/createProduct", upload.single("file"), (req, res) => {
   let cid = req.body["cid"];
   let price = req.body["price"];
   let inventory = req.body["inventory"];
+  let file = req.file;
   let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
 
   // find if name is already existing first
@@ -81,10 +89,57 @@ app.post("/api/createProduct", upload.single("file"), (req, res) => {
       ? (console.error(err), res.status(500).send("Cannot create product, please try again later"))
       : lang.isNil(result) || lang.isEmpty(result)
       ? ((query = "INSERT INTO PRODUCTS  VALUES (?,?,?,?,?,?,?)"),
-        pool.query(query, [null, cid, name, price, req.file.filename, inventory, description], (err, result) => {
+        pool.query(query, [null, cid, name, price, file.filename, inventory, description], (err, result) => {
           err ? (console.error(err), res.status(500).send("Cannot create product, please try again later")) : res.send("success to create new product");
         }))
       : res.status(400).send("This product already exists, please retype the product");
+  });
+});
+
+app.put("/api/updateProduct", upload.single("file"), (req, res) => {
+  let pid = req.body["pid"];
+  let name = convertEscapeWord(req.body["name"]);
+  let description = convertEscapeWord(req.body["description"]);
+  let cid = req.body["cid"];
+  let price = req.body["price"];
+  let inventory = req.body["inventory"];
+  let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
+  let oldImg = req.body["img"];
+  let file = req.file;
+
+  // find if name is already existing first
+  pool.query(query, [name], (err, result) => {
+    err
+      ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+      : lang.isNil(result) || lang.isEmpty(result)
+      ? ((query = "UPDATE PRODUCTS SET name=?,cid=?,price=?,inventory=?,description=?,img=? WHERE pid=?"),
+        pool.query(query, [name, cid, price, inventory, description, file.filename, pid], (err, result) => {
+          err
+            ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+            : !lang.isEqual(oldImg, file.filename)
+            ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
+            : res.send("Success to update product");
+        }))
+      : res.status(400).send("This product already exists, please retype the product");
+  });
+});
+
+app.delete("/api/deleteProduct", (req, res) => {
+  let pid = req.body["pid"];
+  let img = req.body["img"];
+  let query = "SELECT * FROM PRODUCTS WHERE pid=?";
+
+  pool.query(query, [pid], (err, result) => {
+    err
+      ? (console.error(err), res.status(500).send("Cannot delete product, please try again later"))
+      : !lang.isNil(result) && !lang.isEmpty(result)
+      ? ((query = "DELETE FROM PRODUCTS WHERE pid=?"),
+        pool.query(query, [pid], (err, result) => {
+          err
+            ? (console.error(err), res.status(500).send("Cannot delete product, please try again later"))
+            : (fs.unlink("./image/" + img, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to delete product"));
+        }))
+      : res.status(404).send("Product doesn't exist");
   });
 });
 
