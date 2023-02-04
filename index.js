@@ -105,23 +105,37 @@ app.put("/api/updateProduct", upload.single("file"), (req, res) => {
   let inventory = req.body["inventory"];
   let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
   let oldImg = req.body["img"];
+  let oldName = req.body["oldName"];
   let file = req.file;
 
-  // find if name is already existing first
-  pool.query(query, [name], (err, result) => {
-    err
-      ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
-      : lang.isNil(result) || lang.isEmpty(result)
-      ? ((query = "UPDATE PRODUCTS SET name=?,cid=?,price=?,inventory=?,description=?,img=? WHERE pid=?"),
-        pool.query(query, [name, cid, price, inventory, description, file.filename, pid], (err, result) => {
-          err
-            ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
-            : !lang.isEqual(oldImg, file.filename)
-            ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
-            : res.send("Success to update product");
-        }))
-      : res.status(400).send("This product already exists, please retype the product");
-  });
+  // if name not change, then just amend others, no need see if name is existed or not
+  if (lang.isEqual(name, oldName) && name && oldName) {
+    query = `UPDATE PRODUCTS SET cid=?,price=?,inventory=?,description=?${!lang.isNil(file) ? ",img=?" : ""} WHERE pid=?`;
+    pool.query(query, !lang.isNil(file) ? [cid, price, inventory, description, file.filename, pid] : [cid, price, inventory, description, pid], (err, result) => {
+      err
+        ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+        : !lang.isNil(file) && !lang.isEqual(oldImg, file.filename)
+        ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
+        : res.send("Success to update product");
+    });
+  }
+  // if name is changed, then check if name is already existing first
+  else {
+    pool.query(query, [name], (err, result) => {
+      err
+        ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+        : lang.isNil(result) || lang.isEmpty(result)
+        ? ((query = `UPDATE PRODUCTS SET name=?,cid=?,price=?,inventory=?,description=?${!lang.isNil(file) ? ",img=?" : ""} WHERE pid=?`),
+          pool.query(query, !lang.isNil(file) ? [name, cid, price, inventory, description, file.filename, pid] : [name, cid, price, inventory, description, pid], (err, result) => {
+            err
+              ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+              : !lang.isNil(file) && !lang.isEqual(oldImg, file.filename)
+              ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
+              : res.send("Success to update product");
+          }))
+        : res.status(400).send("This product already exists, please retype the product");
+    });
+  }
 });
 
 app.delete("/api/deleteProduct", (req, res) => {
