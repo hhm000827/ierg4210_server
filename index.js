@@ -159,7 +159,10 @@ app.delete("/api/deleteProduct", (req, res) => {
 
 //! Category API
 app.get("/api/getAllCategory", (req, res) => {
-  pool.query("SELECT * FROM CATEGORIES", (err, categories) => {
+  let query = "";
+  if (lang.isNil(req.query["dropdown"]) || lang.isEqual(req.query["dropdown"], "false")) query = "SELECT * FROM CATEGORIES";
+  else if (!lang.isNil(req.query["dropdown"]) && lang.isEqual(req.query["dropdown"], "true")) query = "SELECT cid AS value,name AS label FROM CATEGORIES";
+  pool.query(query, (err, categories) => {
     err ? console.error(err) : res.send(categories);
   });
 });
