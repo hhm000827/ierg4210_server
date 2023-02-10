@@ -49,7 +49,7 @@ app.get("/api/getAllProduct", (req, res) => {
 });
 
 app.get("/api/getAllProductNameAndPid", (req, res) => {
-  pool.query("SELECT pid, name FROM PRODUCTS", (err, products) => {
+  pool.query("SELECT pid as value, name as label FROM PRODUCTS", (err, products) => {
     err ? console.error(err) : res.send(products);
   });
 });
