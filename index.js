@@ -87,6 +87,30 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+app.post("/api/changePassword", (req, res) => {
+  let { email, password, newPassword } = req.body;
+  let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
+
+  pool.query(query, [email], (err, result) => {
+    if (err) console.error(err), res.status(500).send("Cannot change password, please try again later");
+    else {
+      if (lang.isNil(result) || lang.isEmpty(result)) res.status(400).send("This email doesn't exist, please retype the email");
+      else {
+        const hashPassword = result[0].password;
+        const isValid = bycrpt.compareSync(password, hashPassword);
+        if (isValid) {
+          newHashPassword = bycrpt.hashSync(newPassword, 10);
+          query = "UPDATE USERS SET password=? WHERE email=?";
+          pool.query(query, [newHashPassword, email], (err, changeResult) => {
+            if (err) console.error(err), res.status(500).send("Cannot change password, please try again later");
+            else res.send("password changed successfully");
+          });
+        } else res.status(400).send("The old password is incorrect");
+      }
+    }
+  });
+});
+
 app.get("/api/verify", (req, res) => {
   let result = verifyIsAdmin(req.headers["authorization"]);
   res.send(result);
