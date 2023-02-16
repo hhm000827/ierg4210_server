@@ -37,7 +37,9 @@ const upload = multer({
   limits: { fileSize: 5000000 },
   storage: storage,
   fileFilter(req, file, cb) {
-    if (file.size <= 0) cb("image is required", false);
+    let result = verifyIsAdmin(req.headers["authorization"]);
+    if (!lang.isEqual(result, true)) cb("no permission to upload", false);
+    else if (file.size <= 0) cb("image is required", false);
     else if (!file.originalname.match(/\.(jpg|jpeg|gif|png)$/)) cb("Please upload an image", false);
     else cb(null, true);
   },
@@ -124,86 +126,90 @@ app.get("/api/getFilteredProducts", (req, res) => {
 });
 
 app.post("/api/createProduct", upload.single("file"), (req, res) => {
-  let name = convertEscapeWord(req.body["name"]);
-  let description = convertEscapeWord(req.body["description"]);
-  let cid = req.body["cid"];
-  let price = req.body["price"];
-  let inventory = req.body["inventory"];
-  let file = req.file;
-  let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
-
-  // find if name is already existing first
-  pool.query(query, [name], (err, result) => {
-    err
-      ? (console.error(err), res.status(500).send("Cannot create product, please try again later"))
-      : lang.isNil(result) || lang.isEmpty(result)
-      ? ((query = "INSERT INTO PRODUCTS  VALUES (?,?,?,?,?,?,?)"),
-        pool.query(query, [null, cid, name, price, file.filename, inventory, description], (err, result) => {
-          err ? (console.error(err), res.status(500).send("Cannot create product, please try again later")) : res.send("success to create new product");
-        }))
-      : res.status(400).send("This product already exists, please retype the product");
-  });
-});
-
-app.put("/api/updateProduct", upload.single("file"), (req, res) => {
-  let pid = req.body["pid"];
-  let name = convertEscapeWord(req.body["name"]);
-  let description = convertEscapeWord(req.body["description"]);
-  let cid = req.body["cid"];
-  let price = req.body["price"];
-  let inventory = req.body["inventory"];
-  let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
-  let oldImg = req.body["img"];
-  let oldName = req.body["oldName"];
-  let file = req.file;
-
-  // if name not change, then just amend others, no need see if name is existed or not
-  if (lang.isEqual(name, oldName) && name && oldName) {
-    query = `UPDATE PRODUCTS SET cid=?,price=?,inventory=?,description=?${!lang.isNil(file) ? ",img=?" : ""} WHERE pid=?`;
-    pool.query(query, !lang.isNil(file) ? [cid, price, inventory, description, file.filename, pid] : [cid, price, inventory, description, pid], (err, result) => {
-      err
-        ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
-        : !lang.isNil(file) && !lang.isEqual(oldImg, file.filename)
-        ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
-        : res.send("Success to update product");
-    });
-  }
-  // if name is changed, then check if name is already existing first
+  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
+    let { name, description, cid, price, inventory } = req.body;
+    name = convertEscapeWord(name);
+    description = convertEscapeWord(description);
+    let file = req.file;
+    let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
+
+    // find if name is already existing first
     pool.query(query, [name], (err, result) => {
       err
-        ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+        ? (console.error(err), res.status(500).send("Cannot create product, please try again later"))
         : lang.isNil(result) || lang.isEmpty(result)
-        ? ((query = `UPDATE PRODUCTS SET name=?,cid=?,price=?,inventory=?,description=?${!lang.isNil(file) ? ",img=?" : ""} WHERE pid=?`),
-          pool.query(query, !lang.isNil(file) ? [name, cid, price, inventory, description, file.filename, pid] : [name, cid, price, inventory, description, pid], (err, result) => {
-            err
-              ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
-              : !lang.isNil(file) && !lang.isEqual(oldImg, file.filename)
-              ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
-              : res.send("Success to update product");
+        ? ((query = "INSERT INTO PRODUCTS  VALUES (?,?,?,?,?,?,?)"),
+          pool.query(query, [null, cid, name, price, file.filename, inventory, description], (err, result) => {
+            err ? (console.error(err), res.status(500).send("Cannot create product, please try again later")) : res.send("success to create new product");
           }))
         : res.status(400).send("This product already exists, please retype the product");
     });
   }
 });
 
-app.delete("/api/deleteProduct", (req, res) => {
-  let pid = req.body["pid"];
-  let img = req.body["img"];
-  let query = "SELECT * FROM PRODUCTS WHERE pid=?";
+app.put("/api/updateProduct", upload.single("file"), (req, res) => {
+  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let { pid, name, description, cid, price, inventory, oldImg, oldName } = req.body;
+    name = convertEscapeWord(name);
+    description = convertEscapeWord(description);
+    let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
+    let file = req.file;
 
-  pool.query(query, [pid], (err, result) => {
-    err
-      ? (console.error(err), res.status(500).send("Cannot delete product, please try again later"))
-      : !lang.isNil(result) && !lang.isEmpty(result)
-      ? ((query = "DELETE FROM PRODUCTS WHERE pid=?"),
-        pool.query(query, [pid], (err, result) => {
-          err
-            ? (console.error(err), res.status(500).send("Cannot delete product, please try again later"))
-            : (fs.unlink("./image/" + img, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to delete product"));
-        }))
-      : res.status(404).send("Product doesn't exist");
-  });
+    // if name not change, then just amend others, no need see if name is existed or not
+    if (lang.isEqual(name, oldName) && name && oldName) {
+      query = `UPDATE PRODUCTS SET cid=?,price=?,inventory=?,description=?${!lang.isNil(file) ? ",img=?" : ""} WHERE pid=?`;
+      pool.query(query, !lang.isNil(file) ? [cid, price, inventory, description, file.filename, pid] : [cid, price, inventory, description, pid], (err, result) => {
+        err
+          ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+          : !lang.isNil(file) && !lang.isEqual(oldImg, file.filename)
+          ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
+          : res.send("Success to update product");
+      });
+    }
+    // if name is changed, then check if name is already existing first
+    else {
+      pool.query(query, [name], (err, result) => {
+        err
+          ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+          : lang.isNil(result) || lang.isEmpty(result)
+          ? ((query = `UPDATE PRODUCTS SET name=?,cid=?,price=?,inventory=?,description=?${!lang.isNil(file) ? ",img=?" : ""} WHERE pid=?`),
+            pool.query(query, !lang.isNil(file) ? [name, cid, price, inventory, description, file.filename, pid] : [name, cid, price, inventory, description, pid], (err, result) => {
+              err
+                ? (console.error(err), res.status(500).send("Cannot update product, please try again later"))
+                : !lang.isNil(file) && !lang.isEqual(oldImg, file.filename)
+                ? (fs.unlink("./image/" + oldImg, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to update product"))
+                : res.send("Success to update product");
+            }))
+          : res.status(400).send("This product already exists, please retype the product");
+      });
+    }
+  }
+});
+
+app.delete("/api/deleteProduct", (req, res) => {
+  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let { pid, img } = req.body;
+    let query = "SELECT * FROM PRODUCTS WHERE pid=?";
+
+    pool.query(query, [pid], (err, result) => {
+      err
+        ? (console.error(err), res.status(500).send("Cannot delete product, please try again later"))
+        : !lang.isNil(result) && !lang.isEmpty(result)
+        ? ((query = "DELETE FROM PRODUCTS WHERE pid=?"),
+          pool.query(query, [pid], (err, result) => {
+            err
+              ? (console.error(err), res.status(500).send("Cannot delete product, please try again later"))
+              : (fs.unlink("./image/" + img, (err) => (err ? console.error(err) : console.log("Delete File successfully."))), res.send("Success to delete product"));
+          }))
+        : res.status(404).send("Product doesn't exist");
+    });
+  }
 });
 
 //! Category API
@@ -217,54 +223,66 @@ app.get("/api/getAllCategory", (req, res) => {
 });
 
 app.post("/api/createCategory", (req, res) => {
-  let name = convertEscapeWord(req.body["name"]);
-  let query = "SELECT * FROM CATEGORIES WHERE name=? LIMIT 1";
+  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let name = convertEscapeWord(req.body["name"]);
+    let query = "SELECT * FROM CATEGORIES WHERE name=? LIMIT 1";
 
-  // find if name is already existing first
-  pool.query(query, [name], (err, result) => {
-    err
-      ? (console.error(err), res.status(500).send("Cannot create category, please try again later"))
-      : lang.isNil(result) || lang.isEmpty(result)
-      ? ((query = "INSERT INTO CATEGORIES (name) VALUES (?)"),
-        pool.query(query, [name], (err, result) => {
-          err ? (console.error(err), res.status(500).send("Cannot create category, please try again later")) : res.send("success to create new category");
-        }))
-      : res.status(400).send("This category already exists, please retype the category");
-  });
+    // find if name is already existing first
+    pool.query(query, [name], (err, result) => {
+      err
+        ? (console.error(err), res.status(500).send("Cannot create category, please try again later"))
+        : lang.isNil(result) || lang.isEmpty(result)
+        ? ((query = "INSERT INTO CATEGORIES (name) VALUES (?)"),
+          pool.query(query, [name], (err, result) => {
+            err ? (console.error(err), res.status(500).send("Cannot create category, please try again later")) : res.send("success to create new category");
+          }))
+        : res.status(400).send("This category already exists, please retype the category");
+    });
+  }
 });
 
 app.put("/api/updateCategory", (req, res) => {
-  let name = convertEscapeWord(req.body["name"]);
-  let cid = req.body["cid"];
-  let query = "SELECT * FROM CATEGORIES WHERE name=? LIMIT 1";
+  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let name = convertEscapeWord(req.body["name"]);
+    let cid = req.body["cid"];
+    let query = "SELECT * FROM CATEGORIES WHERE name=? LIMIT 1";
 
-  // find if name is already existing first
-  pool.query(query, [name], (err, result) => {
-    err
-      ? (console.error(err), res.status(500).send("Cannot update category, please try again later"))
-      : lang.isNil(result) || lang.isEmpty(result)
-      ? ((query = "UPDATE CATEGORIES SET name=? WHERE cid=?"),
-        pool.query(query, [name, cid], (err, result) => {
-          err ? (console.error(err), res.status(500).send("Cannot update category, please try again later")) : res.send("Success to update category");
-        }))
-      : res.status(400).send("This category already exists, please retype the category");
-  });
+    // find if name is already existing first
+    pool.query(query, [name], (err, result) => {
+      err
+        ? (console.error(err), res.status(500).send("Cannot update category, please try again later"))
+        : lang.isNil(result) || lang.isEmpty(result)
+        ? ((query = "UPDATE CATEGORIES SET name=? WHERE cid=?"),
+          pool.query(query, [name, cid], (err, result) => {
+            err ? (console.error(err), res.status(500).send("Cannot update category, please try again later")) : res.send("Success to update category");
+          }))
+        : res.status(400).send("This category already exists, please retype the category");
+    });
+  }
 });
 
 app.delete("/api/deleteCategory", (req, res) => {
-  let cid = req.body["cid"];
-  let query = "SELECT * FROM CATEGORIES WHERE cid=?";
+  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let cid = req.body["cid"];
+    let query = "SELECT * FROM CATEGORIES WHERE cid=?";
 
-  pool.query(query, [cid], (err, result) => {
-    err
-      ? (console.error(err), res.status(500).send("Cannot delete category, please try again later"))
-      : !lang.isNil(result) && !lang.isEmpty(result)
-      ? ((query = "DELETE FROM CATEGORIES WHERE cid=?"),
-        pool.query(query, [cid], (err, result) => {
-          err ? (console.error(err), res.status(500).send("Cannot delete category, please try again later")) : res.send("Success to delete category");
-        }))
-      : res.status(404).send("Category doesn't exist");
-  });
+    pool.query(query, [cid], (err, result) => {
+      err
+        ? (console.error(err), res.status(500).send("Cannot delete category, please try again later"))
+        : !lang.isNil(result) && !lang.isEmpty(result)
+        ? ((query = "DELETE FROM CATEGORIES WHERE cid=?"),
+          pool.query(query, [cid], (err, result) => {
+            err ? (console.error(err), res.status(500).send("Cannot delete category, please try again later")) : res.send("Success to delete category");
+          }))
+        : res.status(404).send("Category doesn't exist");
+    });
+  }
 });
 
 app.listen(process.env.SERVER_PORT);
