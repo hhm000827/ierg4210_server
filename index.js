@@ -8,6 +8,8 @@ var string = require("lodash/string");
 var he = require("he");
 const multer = require("multer");
 const fs = require("fs");
+const bycrpt = require("bcrypt");
+const { createJwt, verifyIsAdmin } = require("./jwt");
 
 const app = express();
 app.use(cors());
@@ -39,6 +41,54 @@ const upload = multer({
     else if (!file.originalname.match(/\.(jpg|jpeg|gif|png)$/)) cb("Please upload an image", false);
     else cb(null, true);
   },
+});
+
+//! User API
+// app.post("/api/createUser", (req, res) => {
+//   let email = req.body.email;
+//   let password = bycrpt.hashSync(req.body.password, 10);
+//   let isAdmin = req.body.isAdmin;
+
+//   let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
+//   // find if name is already existing first
+//   pool.query(query, [email], (err, result) => {
+//     err
+//       ? (console.error(err), res.status(500).send("Cannot create user, please try again later"))
+//       : lang.isNil(result) || lang.isEmpty(result)
+//       ? ((query = "INSERT INTO USERS  VALUES (NULL,?,?,?)"),
+//         pool.query(query, [email, password, isAdmin], (err, result) => {
+//           err ? (console.error(err), res.status(500).send("Cannot create user, please try again later")) : res.send("success to create new user");
+//         }))
+//       : res.status(400).send("This user already exists, please retype the email");
+//   });
+// });
+
+app.post("/api/login", (req, res) => {
+  let email = req.body.email;
+  let password = req.body.password;
+
+  let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
+
+  pool.query(query, [email], (err, result) => {
+    if (err) console.error(err), res.status(500).send("Cannot login, please try again later");
+    else {
+      if (lang.isNil(result) || lang.isEmpty(result)) res.status(400).send("This email doesn't exist, please retype the email");
+      else {
+        const hashPassword = result[0].password;
+        const isValid = bycrpt.compareSync(password, hashPassword);
+        if (isValid) {
+          let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
+          let token = createJwt(data);
+          res.send({ token: "Bearer " + token, name: email.split("@")[0], message: "login success" });
+        } else res.status(400).send("This password is incorrect");
+      }
+    }
+  });
+});
+
+app.post("/api/verify", (req, res) => {
+  let result = verifyIsAdmin(req.headers["authorization"]);
+  res.send(result);
 });
 
 //! Product API
