@@ -66,7 +66,6 @@ const upload = multer({
 app.post("/api/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
-
   let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
 
   pool.query(query, [email], (err, result) => {
@@ -86,7 +85,7 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-app.post("/api/verify", (req, res) => {
+app.get("/api/verify", (req, res) => {
   let result = verifyIsAdmin(req.headers["authorization"]);
   res.send(result);
 });
