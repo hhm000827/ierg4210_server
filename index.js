@@ -94,7 +94,7 @@ app.post("/api/changePassword", (req, res) => {
   pool.query(query, [email], (err, result) => {
     if (err) console.error(err), res.status(500).send("Cannot change password, please try again later");
     else {
-      if (lang.isNil(result) || lang.isEmpty(result)) res.status(400).send("This email doesn't exist, please retype the email");
+      if (lang.isNil(result) || lang.isEmpty(result)) res.status(400).send("either email or old password is incorrect");
       else {
         const hashPassword = result[0].password;
         const isValid = bycrpt.compareSync(password, hashPassword);
@@ -105,7 +105,7 @@ app.post("/api/changePassword", (req, res) => {
             if (err) console.error(err), res.status(500).send("Cannot change password, please try again later");
             else res.send("password changed successfully");
           });
-        } else res.status(400).send("The old password is incorrect");
+        } else res.status(400).send("either email or old password is incorrect");
       }
     }
   });
