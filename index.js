@@ -73,7 +73,7 @@ app.post("/api/login", (req, res) => {
   pool.query(query, [email], (err, result) => {
     if (err) console.error(err), res.status(500).send("Cannot login, please try again later");
     else {
-      if (lang.isNil(result) || lang.isEmpty(result)) res.status(400).send("This email doesn't exist, please retype the email");
+      if (lang.isNil(result) || lang.isEmpty(result)) res.status(400).send("either email or password is incorrect");
       else {
         const hashPassword = result[0].password;
         const isValid = bycrpt.compareSync(password, hashPassword);
@@ -81,7 +81,7 @@ app.post("/api/login", (req, res) => {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
           res.send({ token: "Bearer " + token, name: email.split("@")[0], message: "login success" });
-        } else res.status(400).send("This password is incorrect");
+        } else res.status(400).send("either email or password is incorrect");
       }
     }
   });
