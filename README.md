@@ -14,9 +14,13 @@ MySQL (MariaDb)
 
 multer
 
-## How to Run the project's backend in phase 2
+## authorization Upload
 
-### Install Node.js
+JWT
+
+## How to Run the project's backend in phase 3
+
+### Install Node.js (if not yet install)
 
 Download from https://nodejs.org/en/. Version is 18.xx.x LTS (left button)
 
@@ -35,7 +39,7 @@ For deployment in aws ec2, recommend to install pm2
 2. `nodemon index.js` - for local testing
 3. `pm2 index.js` - for deployment in aws ec2
 
-## Remainder of phase 2's backend
+## Remainder of phase 3's backend
 
 After turning on server in local, you have to turn on frontend to view the page. You can read README.md in ierg4210 folder for learning how to turn on frontend.
 
