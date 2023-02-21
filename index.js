@@ -4,32 +4,26 @@ var pool = require("./pool");
 var bodyParser = require("body-parser");
 var lang = require("lodash/lang");
 require("dotenv").config({ path: __dirname + "/config.env" });
-var string = require("lodash/string");
-var he = require("he");
 const multer = require("multer");
 const fs = require("fs");
 const bycrpt = require("bcrypt");
 const { createJwt, verifyIsAdmin } = require("./jwt");
+const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+const { validate, ValidationError } = require("express-validation");
 
 // serve the images in image folder to frontend
 app.use("/images", express.static("image"));
-
-const convertEscapeWord = (input) => {
-  result = string.escape(input);
-  result = string.escapeRegExp(input);
-  return he.encode(result);
-};
 
 //config of file upload
 let storage = multer.diskStorage({
   destination: "./image/",
   filename: function (req, file, callback) {
-    callback(null, convertEscapeWord(req.body["name"]) + "." + file.mimetype.split("/").pop());
+    callback(null, req.body["name"] + "." + file.mimetype.split("/").pop());
   },
 });
 
@@ -65,7 +59,7 @@ const upload = multer({
 //   });
 // });
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login", validate(login), (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
@@ -87,7 +81,7 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-app.post("/api/changePassword", (req, res) => {
+app.post("/api/changePassword", validate(changePassword), (req, res) => {
   let { email, password, newPassword } = req.body;
   let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
 
@@ -149,13 +143,11 @@ app.get("/api/getFilteredProducts", (req, res) => {
   }
 });
 
-app.post("/api/createProduct", upload.single("file"), (req, res) => {
+app.post("/api/createProduct", upload.single("file"), validate(createProduct), (req, res) => {
   let isAdmin = verifyIsAdmin(req.headers["authorization"]);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let { name, description, cid, price, inventory } = req.body;
-    name = convertEscapeWord(name);
-    description = convertEscapeWord(description);
     let file = req.file;
     let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
 
@@ -173,13 +165,11 @@ app.post("/api/createProduct", upload.single("file"), (req, res) => {
   }
 });
 
-app.put("/api/updateProduct", upload.single("file"), (req, res) => {
+app.put("/api/updateProduct", upload.single("file"), validate(updateProduct), (req, res) => {
   let isAdmin = verifyIsAdmin(req.headers["authorization"]);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let { pid, name, description, cid, price, inventory, oldImg, oldName } = req.body;
-    name = convertEscapeWord(name);
-    description = convertEscapeWord(description);
     let query = "SELECT * FROM PRODUCTS WHERE name=? LIMIT 1";
     let file = req.file;
 
@@ -214,7 +204,7 @@ app.put("/api/updateProduct", upload.single("file"), (req, res) => {
   }
 });
 
-app.delete("/api/deleteProduct", (req, res) => {
+app.delete("/api/deleteProduct", validate(deleteProduct), (req, res) => {
   let isAdmin = verifyIsAdmin(req.headers["authorization"]);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -246,11 +236,11 @@ app.get("/api/getAllCategory", (req, res) => {
   });
 });
 
-app.post("/api/createCategory", (req, res) => {
+app.post("/api/createCategory", validate(createCategory), (req, res) => {
   let isAdmin = verifyIsAdmin(req.headers["authorization"]);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
-    let name = convertEscapeWord(req.body["name"]);
+    let name = req.body["name"];
     let query = "SELECT * FROM CATEGORIES WHERE name=? LIMIT 1";
 
     // find if name is already existing first
@@ -267,12 +257,11 @@ app.post("/api/createCategory", (req, res) => {
   }
 });
 
-app.put("/api/updateCategory", (req, res) => {
+app.put("/api/updateCategory", validate(updateCategory), (req, res) => {
   let isAdmin = verifyIsAdmin(req.headers["authorization"]);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
-    let name = convertEscapeWord(req.body["name"]);
-    let cid = req.body["cid"];
+    let { name, cid } = req.body;
     let query = "SELECT * FROM CATEGORIES WHERE name=? LIMIT 1";
 
     // find if name is already existing first
@@ -289,7 +278,7 @@ app.put("/api/updateCategory", (req, res) => {
   }
 });
 
-app.delete("/api/deleteCategory", (req, res) => {
+app.delete("/api/deleteCategory", validate(deleteCategory), (req, res) => {
   let isAdmin = verifyIsAdmin(req.headers["authorization"]);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -306,6 +295,13 @@ app.delete("/api/deleteCategory", (req, res) => {
           }))
         : res.status(404).send("Category doesn't exist");
     });
+  }
+});
+
+app.use((err, req, res, next) => {
+  if (err instanceof ValidationError) {
+    if (req.file) fs.unlink(req.file.path, (err) => (err ? console.log(err) : console.log("delete file successfully")));
+    return res.status(err.statusCode).json(err);
   }
 });
 
