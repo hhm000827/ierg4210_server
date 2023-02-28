@@ -6,9 +6,8 @@ module.exports = {
   createJwt: (data) => {
     return jwt.sign(data, process.env.JWT_SECRET, { expiresIn: "3 days" });
   },
-  verifyIsAdmin: (BearerToken) => {
-    if (lang.isNil(BearerToken)) return false;
-    let token = BearerToken.split(" ")[1];
+  verifyIsAdmin: (token) => {
+    if (lang.isNil(token)) return false;
     try {
       let decoded = jwt.verify(token, process.env.JWT_SECRET);
       if (!lang.isNil(decoded.isAdmin) && lang.isEqual(Number(decoded.isAdmin), 1)) return true;

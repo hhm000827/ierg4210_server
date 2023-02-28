@@ -7,11 +7,18 @@ require("dotenv").config({ path: __dirname + "/config.env" });
 const multer = require("multer");
 const fs = require("fs");
 const bycrpt = require("bcrypt");
+var cookieParser = require("cookie-parser");
 const { createJwt, verifyIsAdmin } = require("./jwt");
 const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
 
 const app = express();
-app.use(cors());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: process.env.NODE_ENV === "production" ? "http://13.112.244.194" : "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 const { validate, ValidationError } = require("express-validation");
@@ -31,7 +38,7 @@ const upload = multer({
   limits: { fileSize: 5000000 },
   storage: storage,
   fileFilter(req, file, cb) {
-    let result = verifyIsAdmin(req.headers["authorization"]);
+    let result = verifyIsAdmin(req.cookies.auth);
     if (!lang.isEqual(result, true)) cb("no permission to upload", false);
     else if (file.size <= 0) cb("image is required", false);
     else if (!file.originalname.match(/\.(jpg|jpeg|gif|png)$/)) cb("Please upload an image", false);
@@ -74,7 +81,9 @@ app.post("/api/login", validate(login), (req, res) => {
         if (isValid) {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
-          res.send({ token: "Bearer " + token, name: email.split("@")[0], message: "login success" });
+          res.clearCookie("auth");
+          res.cookie("auth", token, { httpOnly: true, secure: true, expires: new Date(Date.now() + 86400 * 1000 * 3) });
+          res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
       }
     }
@@ -106,7 +115,7 @@ app.post("/api/changePassword", validate(changePassword), (req, res) => {
 });
 
 app.get("/api/verify", (req, res) => {
-  let result = verifyIsAdmin(req.headers["authorization"]);
+  let result = verifyIsAdmin(req.cookies.auth);
   res.send(result);
 });
 
@@ -144,7 +153,7 @@ app.get("/api/getFilteredProducts", (req, res) => {
 });
 
 app.post("/api/createProduct", upload.single("file"), validate(createProduct), (req, res) => {
-  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let { name, description, cid, price, inventory } = req.body;
@@ -166,7 +175,7 @@ app.post("/api/createProduct", upload.single("file"), validate(createProduct), (
 });
 
 app.put("/api/updateProduct", upload.single("file"), validate(updateProduct), (req, res) => {
-  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let { pid, name, description, cid, price, inventory, oldImg, oldName } = req.body;
@@ -205,7 +214,7 @@ app.put("/api/updateProduct", upload.single("file"), validate(updateProduct), (r
 });
 
 app.delete("/api/deleteProduct", validate(deleteProduct), (req, res) => {
-  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let { pid, img } = req.body;
@@ -237,7 +246,7 @@ app.get("/api/getAllCategory", (req, res) => {
 });
 
 app.post("/api/createCategory", validate(createCategory), (req, res) => {
-  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let name = req.body["name"];
@@ -258,7 +267,7 @@ app.post("/api/createCategory", validate(createCategory), (req, res) => {
 });
 
 app.put("/api/updateCategory", validate(updateCategory), (req, res) => {
-  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let { name, cid } = req.body;
@@ -279,7 +288,7 @@ app.put("/api/updateCategory", validate(updateCategory), (req, res) => {
 });
 
 app.delete("/api/deleteCategory", validate(deleteCategory), (req, res) => {
-  let isAdmin = verifyIsAdmin(req.headers["authorization"]);
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
     let cid = req.body["cid"];
