@@ -19,6 +19,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 const { validate, ValidationError } = require("express-validation");
@@ -82,7 +83,7 @@ app.post("/api/login", validate(login), (req, res) => {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
           res.clearCookie("auth");
-          res.cookie("auth", token, { httpOnly: true, secure: true, expires: new Date(Date.now() + 86400 * 1000 * 3) });
+          res.cookie("auth", token, { httpOnly: true, expires: new Date(Date.now() + 86400 * 1000 * 3) });
           res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
       }
@@ -117,6 +118,11 @@ app.post("/api/changePassword", validate(changePassword), (req, res) => {
 app.get("/api/verify", (req, res) => {
   let result = verifyIsAdmin(req.cookies.auth);
   res.send(result);
+});
+
+app.get("/api/logout", (req, res) => {
+  res.clearCookie("auth");
+  res.end();
 });
 
 //! Product API
