@@ -15,7 +15,7 @@ const app = express();
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production" ? "http://13.112.244.194" : "http://localhost:3000",
+    origin: ["http://13.112.244.194", "http://localhost:3000", "http://s16.ierg4210.ie.cuhk.edu.hk"],
     credentials: true,
   })
 );
