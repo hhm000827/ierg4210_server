@@ -99,7 +99,7 @@ app.post("/api/login", csrfProtection, validate(login), (req, res) => {
   });
 });
 
-app.post("/api/changePassword", validate(changePassword), (req, res) => {
+app.post("/api/changePassword", csrfProtection, validate(changePassword), (req, res) => {
   let { email, password, newPassword } = req.body;
   let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
 
@@ -167,7 +167,7 @@ app.get("/api/getFilteredProducts", (req, res) => {
   }
 });
 
-app.post("/api/createProduct", upload.single("file"), validate(createProduct), (req, res) => {
+app.post("/api/createProduct", csrfProtection, upload.single("file"), validate(createProduct), (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -189,7 +189,7 @@ app.post("/api/createProduct", upload.single("file"), validate(createProduct), (
   }
 });
 
-app.put("/api/updateProduct", upload.single("file"), validate(updateProduct), (req, res) => {
+app.put("/api/updateProduct", csrfProtection, upload.single("file"), validate(updateProduct), (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -228,7 +228,7 @@ app.put("/api/updateProduct", upload.single("file"), validate(updateProduct), (r
   }
 });
 
-app.delete("/api/deleteProduct", validate(deleteProduct), (req, res) => {
+app.delete("/api/deleteProduct", csrfProtection, validate(deleteProduct), (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -260,7 +260,7 @@ app.get("/api/getAllCategory", (req, res) => {
   });
 });
 
-app.post("/api/createCategory", validate(createCategory), (req, res) => {
+app.post("/api/createCategory", csrfProtection, validate(createCategory), (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -281,7 +281,7 @@ app.post("/api/createCategory", validate(createCategory), (req, res) => {
   }
 });
 
-app.put("/api/updateCategory", validate(updateCategory), (req, res) => {
+app.put("/api/updateCategory", csrfProtection, validate(updateCategory), (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
@@ -302,7 +302,7 @@ app.put("/api/updateCategory", validate(updateCategory), (req, res) => {
   }
 });
 
-app.delete("/api/deleteCategory", validate(deleteCategory), (req, res) => {
+app.delete("/api/deleteCategory", csrfProtection, validate(deleteCategory), (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
