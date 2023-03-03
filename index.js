@@ -10,8 +10,10 @@ const bycrpt = require("bcrypt");
 var cookieParser = require("cookie-parser");
 const { createJwt, verifyIsAdmin } = require("./jwt");
 const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
+var csrf = require("csurf");
 
 const app = express();
+var csrfProtection = csrf({ cookie: { httpOnly: true } });
 app.use(cookieParser());
 app.use(
   cors({
@@ -47,6 +49,12 @@ const upload = multer({
   },
 });
 
+app.get("/api/getCsrfToken", csrfProtection, function (req, res) {
+  // pass the csrfToken to the view
+
+  res.json({ csrfToken: req.csrfToken() });
+});
+
 //! User API
 // app.post("/api/createUser", (req, res) => {
 //   let email = req.body.email;
@@ -67,7 +75,7 @@ const upload = multer({
 //   });
 // });
 
-app.post("/api/login", validate(login), (req, res) => {
+app.post("/api/login", csrfProtection, validate(login), (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   let query = "SELECT * FROM USERS WHERE email=? LIMIT 1";
@@ -122,6 +130,7 @@ app.get("/api/verify", (req, res) => {
 
 app.get("/api/logout", (req, res) => {
   res.clearCookie("auth");
+  res.clearCookie("_csrf");
   res.end();
 });
 
@@ -317,7 +326,7 @@ app.use((err, req, res, next) => {
   if (err instanceof ValidationError) {
     if (req.file) fs.unlink(req.file.path, (err) => (err ? console.log(err) : console.log("delete file successfully")));
     return res.status(err.statusCode).json(err);
-  }
+  } else if (err.code === "EBADCSRFTOKEN") res.status(403).send(err.message);
 });
 
 app.listen(process.env.SERVER_PORT);
