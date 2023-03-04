@@ -11,6 +11,7 @@ var cookieParser = require("cookie-parser");
 const { createJwt, verifyIsAdmin } = require("./jwt");
 const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
 var csrf = require("csurf");
+const { validate, ValidationError } = require("express-validation");
 
 const app = express();
 var csrfProtection = csrf({ cookie: { httpOnly: true } });
@@ -24,7 +25,6 @@ app.use(
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-const { validate, ValidationError } = require("express-validation");
 
 // serve the images in image folder to frontend
 app.use("/images", express.static("image"));
