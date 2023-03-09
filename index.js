@@ -134,8 +134,8 @@ app.get("/api/verify", (req, res) => {
 });
 
 app.get("/api/logout", (req, res) => {
-  res.clearCookie("auth");
-  res.clearCookie("_csrf");
+  res.clearCookie("auth", { httpOnly: true, secure: true, sameSite: "none", maxAge: -1 });
+  res.clearCookie("_csrf", { httpOnly: true, secure: true, sameSite: "none", maxAge: -1 });
   res.end();
 });
 
