@@ -1,4 +1,5 @@
 const express = require("express");
+var https = require("https");
 var cors = require("cors");
 var pool = require("./pool");
 var bodyParser = require("body-parser");
@@ -13,12 +14,16 @@ const { login, changePassword, createProduct, updateProduct, deleteProduct, crea
 var csrf = require("csurf");
 const { validate, ValidationError } = require("express-validation");
 
+var privateKey = fs.readFileSync("./config/backend.key", "utf8");
+var certificate = fs.readFileSync("./config/13_112_244_194.chained.crt", "utf8");
+var credentials = { key: privateKey, cert: certificate };
+
 const app = express();
-var csrfProtection = csrf({ cookie: { httpOnly: true } });
+var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, expires: new Date(Date.now() + 86400 * 1000 * 3) } });
 app.use(cookieParser());
 app.use(
   cors({
-    origin: ["http://13.112.244.194", "http://localhost:3000", "http://s16.ierg4210.ie.cuhk.edu.hk"],
+    origin: process.env.CORS_ORIGIN.split(" "),
     credentials: true,
   })
 );
@@ -91,7 +96,7 @@ app.post("/api/login", csrfProtection, validate(login), (req, res) => {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
           res.clearCookie("auth");
-          res.cookie("auth", token, { httpOnly: true, expires: new Date(Date.now() + 86400 * 1000 * 3) });
+          res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, expires: new Date(Date.now() + 86400 * 1000 * 3) });
           res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
       }
@@ -329,4 +334,5 @@ app.use((err, req, res, next) => {
   } else if (err.code === "EBADCSRFTOKEN") res.status(403).send(err.message);
 });
 
-app.listen(process.env.SERVER_PORT);
+var httpsServer = https.createServer(credentials, app);
+httpsServer.listen(process.env.SERVER_PORT);
