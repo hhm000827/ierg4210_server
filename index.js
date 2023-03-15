@@ -19,7 +19,15 @@ var certificate = fs.readFileSync("./config/13_112_244_194.chained.crt", "utf8")
 var credentials = { key: privateKey, cert: certificate };
 
 const app = express();
-var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, expires: new Date(Date.now() + 86400 * 1000 * 3) } });
+
+let setCookieDate = (dayShifted) => {
+  var date = new Date();
+  let offset = -date.getTimezoneOffset() / 60;
+  date.setHours(date.getHours() + offset);
+  return new Date(date.setDate(date.getDate() + dayShifted));
+};
+
+var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, expires: setCookieDate(3) } });
 app.use(cookieParser());
 app.use(
   cors({
@@ -96,7 +104,7 @@ app.post("/api/login", csrfProtection, validate(login), (req, res) => {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
           res.clearCookie("auth");
-          res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, expires: new Date(Date.now() + 86400 * 1000 * 3) });
+          res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, expires: setCookieDate(3) });
           res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
       }
