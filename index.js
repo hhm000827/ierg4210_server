@@ -102,7 +102,7 @@ app.post("/api/login", csrfProtection, validate(login), (req, res) => {
         if (isValid) {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
-          res.clearCookie("auth");
+          res.clearCookie("auth", { httpOnly: true, sameSite: "none", secure: true });
           res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, expires: setCookieDate(3) });
           res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
