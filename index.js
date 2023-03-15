@@ -13,6 +13,7 @@ const { createJwt, verifyIsAdmin } = require("./jwt");
 const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
 var csrf = require("csurf");
 const { validate, ValidationError } = require("express-validation");
+var moment = require("moment-timezone");
 
 var privateKey = fs.readFileSync("./config/backend.key", "utf8");
 var certificate = fs.readFileSync("./config/13_112_244_194.chained.crt", "utf8");
@@ -21,10 +22,8 @@ var credentials = { key: privateKey, cert: certificate };
 const app = express();
 
 let setCookieDate = (dayShifted) => {
-  var date = new Date();
-  let offset = -date.getTimezoneOffset() / 60;
-  date.setHours(date.getHours() + offset);
-  return new Date(date.setDate(date.getDate() + dayShifted));
+  var hongKongTime = moment().tz("Asia/Hong_Kong").format();
+  return moment(hongKongTime).add(dayShifted, "days").toDate();
 };
 
 var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, expires: setCookieDate(3) } });
