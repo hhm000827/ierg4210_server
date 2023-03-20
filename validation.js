@@ -41,7 +41,7 @@ module.exports = {
         .trim()
         .required(),
       description: Joi.string()
-        .regex(/^[\w,. ]*$/)
+        .regex(/^[\w\s,.]*$/)
         .trim()
         .required(),
       cid: Joi.number().required(),
@@ -57,7 +57,7 @@ module.exports = {
         .trim()
         .required(),
       description: Joi.string()
-        .regex(/^[\w,. ]*$/)
+        .regex(/^[\w\s,.]*$/)
         .trim()
         .required(),
       cid: Joi.number().required(),
