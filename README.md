@@ -16,15 +16,20 @@ multer
 
 ## authorization
 
-JWT
+JWT: create a jwt token and then verify user's permission
 
 ## prevent csrf
 
-csurf
+csurf: use double-submit cookie to prevent csrf. It will verify the csrf tokens in cookie and request header
+CORS origin: https://secure.s16.ierg4210.ie.cuhk.edu.hk only
 
 ## form validation
 
-JOI
+JOI: prevent XSS with comprehensive backend validation
+
+## Time Configuration
+
+moment-timezone: library for configuring time format and timeZone
 
 ## How to Run the project's backend in phase 4
 

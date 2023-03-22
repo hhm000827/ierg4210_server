@@ -63,7 +63,6 @@ const upload = multer({
 
 app.get("/api/getCsrfToken", csrfProtection, function (req, res) {
   // pass the csrfToken to the view
-
   res.json({ csrfToken: req.csrfToken() });
 });
 
