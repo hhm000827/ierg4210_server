@@ -20,7 +20,7 @@ var credentials = { key: privateKey, cert: certificate };
 
 const app = express();
 
-var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, maxAge: 1000 * 60 * 60 * 24 * 3 } });
+var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, maxAge: 60 * 60 * 24 * 3 } });
 app.use(cookieParser());
 app.use(
   cors({
