@@ -27,10 +27,6 @@ CORS origin: https://secure.s16.ierg4210.ie.cuhk.edu.hk only
 
 JOI: prevent XSS with comprehensive backend validation
 
-## Time Configuration
-
-moment-timezone: library for configuring time format and timeZone
-
 ## How to Run the project's backend in phase 4
 
 ### Install Node.js (if not yet install)
