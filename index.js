@@ -13,7 +13,6 @@ const { createJwt, verifyIsAdmin } = require("./jwt");
 const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
 var csrf = require("csurf");
 const { validate, ValidationError } = require("express-validation");
-var moment = require("moment-timezone");
 
 var privateKey = fs.readFileSync("./config/backend.key", "utf8");
 var certificate = fs.readFileSync("./config/13_112_244_194.chained.crt", "utf8");
@@ -21,12 +20,7 @@ var credentials = { key: privateKey, cert: certificate };
 
 const app = express();
 
-let setCookieDate = (dayShifted) => {
-  var hongKongTime = moment().tz("Asia/Hong_Kong").format();
-  return moment(hongKongTime).add(dayShifted, "days").toDate();
-};
-
-var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, expires: setCookieDate(3) } });
+var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, maxAge: 1000 * 60 * 60 * 24 * 3 } });
 app.use(cookieParser());
 app.use(
   cors({
@@ -102,7 +96,7 @@ app.post("/api/login", csrfProtection, validate(login), (req, res) => {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
           res.clearCookie("auth", { httpOnly: true, sameSite: "none", secure: true });
-          res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, expires: setCookieDate(3) });
+          res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, maxAge: 1000 * 60 * 60 * 24 * 3 });
           res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
       }
