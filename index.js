@@ -346,7 +346,6 @@ app.post("/api/createCustomId", csrfProtection, validate(createCustomId), (req, 
 
 app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) => {
   const email = getUserEmail(req.cookies.auth);
-  const currentTime = Date.now();
   let { shoppingCart, record } = req.body;
   shoppingCart = JSON.parse(shoppingCart);
 
@@ -359,8 +358,8 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
   record = { id: record.id, status: record.status, payments: record.purchase_units[0].payments };
   record = JSON.stringify(record);
 
-  let query = "INSERT INTO RECORDS (email,record,products,time) VALUES (?,?,?,?)";
-  pool.query(query, [email, record, products, currentTime], (err, result) => {
+  let query = "INSERT INTO RECORDS (email,record,products) VALUES (?,?,?)";
+  pool.query(query, [email, record, products], (err, result) => {
     err ? (console.error(err), res.status(500).send("Cannot store record to DB")) : res.send("success to store record to DB");
   });
 });
