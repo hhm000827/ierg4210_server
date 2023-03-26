@@ -102,4 +102,23 @@ module.exports = {
       cid: Joi.number().required(),
     }),
   },
+  createCustomId: {
+    body: Joi.object({
+      shoppingCart: Joi.string()
+        .regex(/^[^<>]+$/)
+        .required(),
+      totalPrice: Joi.number().required(),
+      currency: Joi.string().required(),
+    }),
+  },
+  storeRecord: {
+    body: Joi.object({
+      record: Joi.string()
+        .regex(/^[^<>]+$/)
+        .required(),
+      shoppingCart: Joi.string()
+        .regex(/^[^<>]+$/)
+        .required(),
+    }),
+  },
 };

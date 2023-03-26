@@ -16,4 +16,13 @@ module.exports = {
       return error;
     }
   },
+  getUserEmail: (token) => {
+    if (lang.isNil(token)) return false;
+    try {
+      let decoded = jwt.verify(token, process.env.JWT_SECRET);
+      return decoded.email;
+    } catch (error) {
+      return error;
+    }
+  },
 };

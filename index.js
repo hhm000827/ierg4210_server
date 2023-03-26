@@ -9,10 +9,11 @@ const multer = require("multer");
 const fs = require("fs");
 const bycrpt = require("bcrypt");
 var cookieParser = require("cookie-parser");
-const { createJwt, verifyIsAdmin } = require("./jwt");
-const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory } = require("./validation");
+const { createJwt, verifyIsAdmin, getUserEmail } = require("./jwt");
+const { login, changePassword, createProduct, updateProduct, deleteProduct, createCategory, updateCategory, deleteCategory, createCustomId, storeRecord } = require("./validation");
 var csrf = require("csurf");
 const { validate, ValidationError } = require("express-validation");
+const crypto = require("crypto");
 
 var privateKey = fs.readFileSync("./config/backend.key", "utf8");
 var certificate = fs.readFileSync("./config/13_112_244_194.chained.crt", "utf8");
@@ -325,6 +326,43 @@ app.delete("/api/deleteCategory", csrfProtection, validate(deleteCategory), (req
         : res.status(404).send("Category doesn't exist");
     });
   }
+});
+
+//! Paypal API
+app.post("/api/createCustomId", csrfProtection, validate(createCustomId), (req, res) => {
+  let { shoppingCart, totalPrice, currency } = req.body;
+  let merchant = process.env.MERCHANT;
+  const salt = crypto.randomBytes(16).toString("hex");
+  let hash = crypto.createHash("sha256");
+
+  shoppingCart = JSON.parse(shoppingCart);
+  let products = shoppingCart.map((item) => item.payload);
+  products = JSON.stringify(products);
+
+  hash.update(products + currency + totalPrice + merchant + salt);
+  let digest = hash.digest("hex");
+  res.send({ digest: digest });
+});
+
+app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) => {
+  const email = getUserEmail(req.cookies.auth);
+  const currentTime = Date.now();
+  let { shoppingCart, record } = req.body;
+  shoppingCart = JSON.parse(shoppingCart);
+
+  let products = shoppingCart.map((item) => {
+    return { name: item.payload.name, quantity: item.payload.quantity, subtotal: item.payload.subtotal };
+  });
+  products = JSON.stringify(products);
+
+  record = JSON.parse(record);
+  record = { id: record.id, status: record.status, payments: record.purchase_units[0].payments };
+  record = JSON.stringify(record);
+
+  let query = "INSERT INTO RECORDS (email,record,products,time) VALUES (?,?,?,?)";
+  pool.query(query, [email, record, products, currentTime], (err, result) => {
+    err ? (console.error(err), res.status(500).send("Cannot store record to DB")) : res.send("success to store record to DB");
+  });
 });
 
 app.use((err, req, res, next) => {
