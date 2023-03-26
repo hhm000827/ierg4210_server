@@ -364,6 +364,13 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
   });
 });
 
+app.get("/api/getRecord", csrfProtection, (req, res) => {
+  const email = getUserEmail(req.cookies.auth);
+
+  let query = "SELECT * FROM RECORDS WHERE RECORDS.email = ? ORDER BY cart.RECORDS.time desc limit 5";
+  pool.query(query, [email], (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB")) : res.send({ record: result })));
+});
+
 app.use((err, req, res, next) => {
   if (err instanceof ValidationError) {
     if (req.file) fs.unlink(req.file.path, (err) => (err ? console.log(err) : console.log("delete file successfully")));
