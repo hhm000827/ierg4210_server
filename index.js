@@ -363,7 +363,7 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
 app.get("/api/getUserRecord", csrfProtection, (req, res) => {
   let query = "SELECT record,products FROM RECORDS WHERE RECORDS.email = ? ORDER BY cart.RECORDS.time desc limit 5";
   const email = getUserEmail(req.cookies.auth);
-  if (email === false) res.send([]);
+  if (lang.isNil(email) || lang.isEqual(email, false)) res.send(false);
   else pool.query(query, [email], (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB")) : res.send(result)));
 });
 
