@@ -367,6 +367,15 @@ app.get("/api/getUserRecord", csrfProtection, (req, res) => {
   else pool.query(query, [email], (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB")) : res.send(result)));
 });
 
+app.get("/api/getAllRecord", csrfProtection, (req, res) => {
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let query = "SELECT email,record,products FROM RECORDS ORDER BY cart.RECORDS.time desc";
+    pool.query(query, (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB for Admin")) : res.send(result)));
+  }
+});
+
 app.use((err, req, res, next) => {
   if (err instanceof ValidationError) {
     if (req.file) fs.unlink(req.file.path, (err) => (err ? console.log(err) : console.log("delete file successfully")));
