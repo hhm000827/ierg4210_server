@@ -21,7 +21,7 @@ var credentials = { key: privateKey, cert: certificate };
 
 const app = express();
 
-var csrfProtection = csrf({ cookie: { httpOnly: true, sameSite: "none", secure: true, maxAge: 60 * 60 * 24 * 3 } });
+var csrfProtection = csrf({ cookie: { httpOnly: true, secure: false, maxAge: 60 * 60 * 24 * 3 } });
 app.use(cookieParser());
 app.use(
   cors({
@@ -96,8 +96,8 @@ app.post("/api/login", csrfProtection, validate(login), (req, res) => {
         if (isValid) {
           let data = { email: email, isAdmin: result[0].isAdmin, loginTime: new Date() };
           let token = createJwt(data);
-          res.clearCookie("auth", { httpOnly: true, sameSite: "none", secure: true });
-          res.cookie("auth", token, { httpOnly: true, sameSite: "none", secure: true, maxAge: 1000 * 60 * 60 * 24 * 3 });
+          res.clearCookie("auth", { httpOnly: true, secure: false });
+          res.cookie("auth", token, { httpOnly: true, secure: false, maxAge: 1000 * 60 * 60 * 24 * 3 });
           res.send({ name: email.split("@")[0], message: "login success" });
         } else res.status(400).send("either email or password is incorrect");
       }
@@ -135,8 +135,8 @@ app.get("/api/verify", (req, res) => {
 });
 
 app.get("/api/logout", (req, res) => {
-  res.clearCookie("auth", { httpOnly: true, secure: true, sameSite: "none", maxAge: -1 });
-  res.clearCookie("_csrf", { httpOnly: true, secure: true, sameSite: "none", maxAge: -1 });
+  res.clearCookie("auth", { httpOnly: true, secure: false, maxAge: -1 });
+  res.clearCookie("_csrf", { httpOnly: true, secure: false, maxAge: -1 });
   res.end();
 });
 
@@ -375,4 +375,5 @@ app.use((err, req, res, next) => {
 });
 
 var httpsServer = https.createServer(credentials, app);
-httpsServer.listen(process.env.SERVER_PORT);
+// httpsServer.listen(process.env.SERVER_PORT);
+app.listen(process.env.SERVER_PORT);
