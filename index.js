@@ -335,11 +335,7 @@ app.post("/api/createCustomId", csrfProtection, validate(createCustomId), (req, 
   const salt = crypto.randomBytes(16).toString("hex");
   let hash = crypto.createHash("sha256");
 
-  shoppingCart = JSON.parse(shoppingCart);
-  let products = shoppingCart.map((item) => item.payload);
-  products = JSON.stringify(products);
-
-  hash.update(products + currency + totalPrice + merchant + salt);
+  hash.update(shoppingCart + currency + totalPrice + merchant + salt);
   let digest = hash.digest("hex");
   res.send({ digest: digest });
 });
@@ -350,7 +346,7 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
   shoppingCart = JSON.parse(shoppingCart);
 
   let products = shoppingCart.map((item) => {
-    return { name: item.payload.name, quantity: item.payload.quantity, subtotal: item.payload.subtotal };
+    return { name: item.name, quantity: item.quantity, subtotal: item.subtotal };
   });
   products = JSON.stringify(products);
 
@@ -364,7 +360,7 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
   });
 });
 
-app.get("/api/getRecord", csrfProtection, (req, res) => {
+app.get("/api/getUserRecord", csrfProtection, (req, res) => {
   const email = getUserEmail(req.cookies.auth);
 
   let query = "SELECT record,products FROM RECORDS WHERE RECORDS.email = ? ORDER BY cart.RECORDS.time desc limit 5";
