@@ -361,10 +361,19 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
 });
 
 app.get("/api/getUserRecord", csrfProtection, (req, res) => {
-  const email = getUserEmail(req.cookies.auth);
-
   let query = "SELECT record,products FROM RECORDS WHERE RECORDS.email = ? ORDER BY cart.RECORDS.time desc limit 5";
-  pool.query(query, [email], (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB")) : res.send(result)));
+  const email = getUserEmail(req.cookies.auth);
+  if (lang.isNil(email) || lang.isEqual(email, false)) res.send(false);
+  else pool.query(query, [email], (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB")) : res.send(result)));
+});
+
+app.get("/api/getAllRecord", csrfProtection, (req, res) => {
+  let isAdmin = verifyIsAdmin(req.cookies.auth);
+  if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
+  else {
+    let query = "SELECT email,record,products FROM RECORDS ORDER BY cart.RECORDS.time desc";
+    pool.query(query, (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB for Admin")) : res.send(result)));
+  }
 });
 
 app.use((err, req, res, next) => {
