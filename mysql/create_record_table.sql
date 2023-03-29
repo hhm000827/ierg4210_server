@@ -3,7 +3,7 @@ CREATE TABLE RECORDS (
  email varchar(255) NOT NULL,
  record varchar(1000) NOT NULL,
  products varchar(1000) NOT NULL,
- customId varchar(64) NOT NULL,
- invoiceId varchar(64) NOT NULL,
+ customId varchar(100) NOT NULL,
+ invoiceId varchar(100) NOT NULL,
  time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
