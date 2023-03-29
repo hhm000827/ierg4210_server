@@ -342,7 +342,7 @@ app.post("/api/createCustomId", csrfProtection, validate(createCustomId), (req, 
 
 app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) => {
   const email = getUserEmail(req.cookies.auth);
-  let { shoppingCart, record } = req.body;
+  let { shoppingCart, record, invoiceId, customId } = req.body;
   shoppingCart = JSON.parse(shoppingCart);
 
   let products = shoppingCart.map((item) => {
@@ -354,8 +354,8 @@ app.post("/api/storeRecord", csrfProtection, validate(storeRecord), (req, res) =
   record = { id: record.id, status: record.status, payments: record.purchase_units[0].payments };
   record = JSON.stringify(record);
 
-  let query = "INSERT INTO RECORDS (email,record,products) VALUES (?,?,?)";
-  pool.query(query, [email, record, products], (err, result) => {
+  let query = "INSERT INTO RECORDS (email,record,products,customId,invoiceId) VALUES (?,?,?,?,?)";
+  pool.query(query, [email, record, products, customId, invoiceId], (err, result) => {
     err ? (console.error(err), res.status(500).send("Cannot store record to DB")) : res.send("success to store record to DB");
   });
 });
@@ -371,7 +371,7 @@ app.get("/api/getAllRecord", csrfProtection, (req, res) => {
   let isAdmin = verifyIsAdmin(req.cookies.auth);
   if (!lang.isEqual(isAdmin, true)) res.status(401).send("No permission");
   else {
-    let query = "SELECT email,record,products FROM RECORDS ORDER BY cart.RECORDS.time desc";
+    let query = "SELECT email,record,products,customId,invoiceId FROM RECORDS ORDER BY cart.RECORDS.time desc";
     pool.query(query, (err, result) => (err ? (console.error(err), res.status(500).send("Cannot get record from DB for Admin")) : res.send(result)));
   }
 });

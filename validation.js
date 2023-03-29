@@ -119,6 +119,12 @@ module.exports = {
       shoppingCart: Joi.string()
         .regex(/^[^<>]+$/)
         .required(),
+      invoiceId: Joi.string()
+        .regex(/^[^<>]+$/)
+        .required(),
+      customId: Joi.string()
+        .regex(/^[^<>]+$/)
+        .required(),
     }),
   },
 };
