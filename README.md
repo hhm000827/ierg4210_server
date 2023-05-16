@@ -25,6 +25,13 @@
 | CORS_ORIGIN |
 | MERCHANT    |
 
+## config (It is a folder that under root directory directly and storing the file about HTTPS)
+
+| File            |
+| --------------- |
+| xxx.chained.crt |
+| xxx.key         |
+
 ## How to Run the project's backend
 
 ### Install Node.js (if not yet install)
