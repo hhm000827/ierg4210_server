@@ -1,15 +1,14 @@
 # Background of Backend
 
-| Key             | comment                                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------------------ |
-| Node.js         |                                                                                                              |
-| API Management  | Express.js                                                                                                   |
-| Database        | MySQL (MariaDb)                                                                                              |
-| File Upload     | multer                                                                                                       |
-| authorization   | JWT: create a jwt token and then verify user's permission                                                    |
-| prevent csrf    | csurf: use double-submit cookie to prevent csrf. It will verify the csrf tokens in cookie and request header |
-| JWT_SECRET      | CORS origin: https://secure.s16.ierg4210.ie.cuhk.edu.hk only                                                 |
-| form validation | JOI: prevent XSS with comprehensive backend validation                                                       |
+| Key             | comment                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Node.js         |                                                                                                                                                                                |
+| API Management  | Express.js                                                                                                                                                                     |
+| Database        | MySQL (MariaDb)                                                                                                                                                                |
+| File Upload     | multer                                                                                                                                                                         |
+| authorization   | JWT: create a jwt token and then verify user's permission                                                                                                                      |
+| prevent csrf    | csurf: use double-submit cookie to prevent csrf. It will verify the csrf tokens in cookie and request header <br/>CORS origin: https://secure.s16.ierg4210.ie.cuhk.edu.hk only |
+| form validation | JOI: prevent XSS with comprehensive backend validation                                                                                                                         |
 
 ## config.env (under root directory directly)
 
